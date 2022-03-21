@@ -16,13 +16,17 @@ public class AvroProducer {
 
 	public static void main(String[] args) throws Exception {
 
-		String bootstrap_server ="localhost:9192";
-		String topicName = "AvroProducerTopic";
-		
-		String key = "5";
+		String bootstrap_server = "localhost:29092";
+		String topicName = "user-avro";
+	
+		Properties props = new Properties();
+
+		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
+		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
 		
 		User value = new User();
-		value.setId(Integer.parseInt(key));
+		value.setId(12);
 		value.setUsername("arpit_cool");
 		value.setEmailAddress("arpit.cool100@gmail.com");
 		value.setPhoneNumber("9031871234");
@@ -31,7 +35,14 @@ public class AvroProducer {
 		value.setLastName("Aggarwaal");
 		value.setSex("M");
 		
+		// Send data using Specific record
+		Producer<String, User> specificproducer = new KafkaProducer<String, User>(props);
+		ProducerRecord<String, User> record = new ProducerRecord<String, User>(topicName, null, value);
+		specificproducer.send(record);
+		specificproducer.close();
+		
 		Schema schema = new Schema.Parser().parse(new File("./src/main/resources/user_v1.avsc"));
+		
 		GenericRecord emp1 = new GenericData.Record(schema);
 		emp1.put("id", 1);
 		emp1.put("username", "deep_dey");
@@ -52,19 +63,14 @@ public class AvroProducer {
 		emp2.put("last_name", "Sarkar");
 		emp2.put("sex", "M");
 		
-		Properties props = new Properties();
-
-		props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap_server);
-		props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
-		props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class.getName());
-
-		Producer<String, Object> producer = new KafkaProducer<String, Object>(props);
-		ProducerRecord<String, Object> record = new ProducerRecord<String, Object>(topicName, key, emp2);
-		producer.send(record);
-		producer.close();
+		// Send data using generic record
+		Producer<String, Object> genericproducer = new KafkaProducer<String, Object>(props);
+		ProducerRecord<String, Object> rec1 = new ProducerRecord<String, Object>(topicName, null, emp1);
+		ProducerRecord<String, Object> rec2 = new ProducerRecord<String, Object>(topicName, null, emp2);
+		genericproducer.send(rec1);
+		genericproducer.send(rec2);
+		genericproducer.close();
 
 		System.out.println("AvroProducer Completed!");
-		
 	}
-	
 }
